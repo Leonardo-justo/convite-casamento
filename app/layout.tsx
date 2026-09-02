@@ -2,6 +2,9 @@ import type { Metadata } from 'next';
 import './globals.css';
 
 export const metadata: Metadata = {
+  metadataBase: new URL(
+    'https://bruna-leonardo-casamento-2026.brunapanclo.chatgpt.site',
+  ),
   title: 'Bruna e Leonardo | Convite de casamento',
   description: 'Convite de casamento de Bruna e Leonardo.',
   openGraph: {
