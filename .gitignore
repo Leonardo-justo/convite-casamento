@@ -38,3 +38,6 @@ next-env.d.ts
 /outputs/
 /work/
 /tmp/
+/dist-pages/
+/.pages-build-*/
+*.tsbuildinfo

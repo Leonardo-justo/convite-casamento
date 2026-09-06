@@ -1,8 +1,4 @@
-'use client';
-
-import { useEffect, useRef, useState, type CSSProperties } from 'react';
-import { ChevronLeft, ChevronRight } from 'lucide-react';
-import { Pagination, PaginationContent, PaginationItem, PaginationLink } from '@/components/ui/pagination';
+import type { CSSProperties } from 'react';
 
 const siteUrl = 'https://noivos.casar.com/leonardo-s2-bruna';
 type Hotspot = { label: string; rect: number[]; href: string; external?: boolean };
@@ -45,93 +41,25 @@ function hotspotStyle(rect: number[]): CSSProperties {
   return { left: `${left / 567 * 100}%`, top: `${(575.04 - top) / 567 * 100}%`, width: `${(right - left) / 567 * 100}%`, height: `${(top - bottom) / 567 * 100}%` };
 }
 
-function pageFromHash() {
-  const match = /^#pagina-([1-5])$/.exec(window.location.hash);
-  return match ? Number(match[1]) - 1 : 0;
-}
-
 export default function Home() {
-  const [current, setCurrent] = useState(0);
-  const [previous, setPrevious] = useState<number | null>(null);
-  const [direction, setDirection] = useState('forward');
-  const currentRef = useRef(0);
-  const stageRef = useRef<HTMLDivElement>(null);
-  const touchRef = useRef<{ x: number; y: number } | null>(null);
-
-  useEffect(() => {
-    currentRef.current = pageFromHash();
-    setCurrent(currentRef.current);
-    const onHashChange = () => {
-      const next = pageFromHash();
-      if (next === currentRef.current) return;
-      setPrevious(currentRef.current);
-      setDirection(next > currentRef.current ? 'forward' : 'backward');
-      currentRef.current = next;
-      setCurrent(next);
-      stageRef.current?.focus({ preventScroll: true });
-    };
-    window.addEventListener('hashchange', onHashChange);
-    return () => window.removeEventListener('hashchange', onHashChange);
-  }, []);
-
-  function goTo(next: number) {
-    if (next >= 0 && next < pages.length) window.location.hash = `pagina-${next + 1}`;
-  }
-
   return (
-    <main className="invitation-viewer" onKeyDown={(event) => {
-      if (event.altKey || event.ctrlKey || event.metaKey) return;
-      if (event.key === 'ArrowRight') { event.preventDefault(); goTo(current + 1); }
-      if (event.key === 'ArrowLeft') { event.preventDefault(); goTo(current - 1); }
-    }}>
+    <main className="invitation-viewer">
       <h1 className="sr-only">Convite de casamento de Bruna e Leonardo</h1>
       <div className="invitation-shell">
-        <div className={`invitation-stage ${direction}`} ref={stageRef} tabIndex={-1}
-          role="region" aria-label={`Página ${current + 1} de 5: ${pages[current].title}`}
-          onTouchStart={(event) => {
-            const target = event.target as HTMLElement;
-            touchRef.current = event.touches.length === 1 && !target.closest('a, button')
-              ? { x: event.touches[0].clientX, y: event.touches[0].clientY } : null;
-          }}
-          onTouchMove={(event) => { if (event.touches.length !== 1) touchRef.current = null; }}
-          onTouchCancel={() => { touchRef.current = null; }}
-          onTouchEnd={(event) => {
-            const start = touchRef.current;
-            touchRef.current = null;
-            if (!start || !event.changedTouches.length || (window.visualViewport?.scale ?? 1) > 1.05) return;
-            const dx = event.changedTouches[0].clientX - start.x;
-            const dy = event.changedTouches[0].clientY - start.y;
-            if (Math.abs(dx) > 65 && Math.abs(dx) > Math.abs(dy) * 1.5) goTo(current + (dx < 0 ? 1 : -1));
-          }}>
-          {pages.map((page, index) => (
-            <section key={index} className={`pdf-page ${index === current ? 'active' : index === previous ? 'leaving' : 'parked'}${previous !== null && index === current ? 'entering' : ''}`}
-              inert={index !== current} aria-hidden={index !== current}
-              onAnimationEnd={(event) => { if (event.target === event.currentTarget && index === current) setPrevious(null); }}>
-              <img src={`/convite-novo/pagina-${index + 1}.png`} width={2400} height={2400}
-                alt={page.description} draggable={false} decoding="async"
-                loading={index < 2 ? 'eager' : 'lazy'} fetchPriority={index === 0 ? 'high' : 'auto'} />
-              {page.links.map((link) => (
-                <a key={link.label} className="pdf-hotspot" href={link.href} style={hotspotStyle(link.rect)}
-                  aria-label={link.label} title={link.label}
-                  target={link.external ? '_blank' : undefined}
-                  rel={link.external ? 'noopener noreferrer' : undefined} />
-              ))}
-            </section>
-          ))}
-        </div>
-        <Pagination className="page-navigation" aria-label="Páginas do convite">
-          <button className="page-arrow" type="button" disabled={current === 0} onClick={() => goTo(current - 1)} aria-label="Página anterior"><ChevronLeft aria-hidden="true" /></button>
-          <PaginationContent className="page-numbers">
-            {pages.map((page, index) => (
-              <PaginationItem key={page.title}>
-                <PaginationLink className="page-number" href={`#pagina-${index + 1}`} isActive={current === index}
-                  aria-label={`Página ${index + 1}: ${page.title}`}>{index + 1}</PaginationLink>
-              </PaginationItem>
+        {pages.map((page, index) => (
+          <section key={page.title} id={`pagina-${index + 1}`} className="pdf-page"
+            aria-label={page.title}>
+            <img src={`./convite-novo/pagina-${index + 1}.png`} width={2400} height={2400}
+              alt={page.description} draggable={false} decoding="async"
+              loading={index === 0 ? 'eager' : 'lazy'} fetchPriority={index === 0 ? 'high' : 'auto'} />
+            {page.links.map((link) => (
+              <a key={link.label} className="pdf-hotspot" href={link.href} style={hotspotStyle(link.rect)}
+                aria-label={link.label} title={link.label}
+                target={link.external ? '_blank' : undefined}
+                rel={link.external ? 'noopener noreferrer' : undefined} />
             ))}
-          </PaginationContent>
-          <button className="page-arrow" type="button" disabled={current === pages.length - 1} onClick={() => goTo(current + 1)} aria-label="Próxima página"><ChevronRight aria-hidden="true" /></button>
-        </Pagination>
-        <p className="page-caption" aria-live="polite" aria-atomic="true">{current + 1} / 5 · {pages[current].title}</p>
+          </section>
+        ))}
       </div>
     </main>
   );
