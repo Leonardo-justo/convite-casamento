@@ -1,231 +1,138 @@
 'use client';
 
-import { useMemo, useState } from 'react';
-import {
-  CalendarHeart,
-  ChevronDown,
-  Gift,
-  Heart,
-  MapPin,
-  MessageCircleHeart,
-  Send,
-} from 'lucide-react';
+import { useEffect, useRef, useState, type CSSProperties } from 'react';
+import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { Pagination, PaginationContent, PaginationItem, PaginationLink } from '@/components/ui/pagination';
 
-const weddingDate = new Date('2026-11-07T19:00:00-03:00');
+const siteUrl = 'https://noivos.casar.com/leonardo-s2-bruna';
+type Hotspot = { label: string; rect: number[]; href: string; external?: boolean };
+const pages: { title: string; description: string; links: Hotspot[] }[] = [
+  {
+    title: 'Capa',
+    description: 'Envelope floral com o monograma B | L e a indicação clique aqui para abrir o convite.',
+    links: [{ label: 'Abrir o convite', rect: [223.69646, 154.744568, 342.96136, 280], href: '#pagina-2' }],
+  },
+  {
+    title: 'Convite',
+    description: 'Bruna e Leonardo. Com a benção de Deus e de seus pais, convidam para a celebração de seu Matrimônio. 07 de novembro de 2026, às 19 horas. Paróquia São Luís Gonzaga, Rua São Luiz, nº 250, Centro, Cedral – São Paulo. Após a cerimônia, os noivos recepcionarão os convidados na Chácara Viva Águas Claras I, Rodovia Washington Luís, km 427, São José do Rio Preto – SP. Mais informações e confirmação de presença através do site dos noivos.',
+    links: [
+      { label: 'Avançar para os locais', rect: [472.68369, -14.2561035, 591.94861, 74.254974], href: '#pagina-3' },
+      { label: 'Informações e confirmação de presença no site dos noivos (abre em nova aba)', rect: [164, 67, 405, 84], href: siteUrl, external: true },
+    ],
+  },
+  {
+    title: 'Local',
+    description: 'Cerimônia na Paróquia São Luís Gonzaga, Rua São Luiz, nº 250, Centro, Cedral – São Paulo. Recepção na Chácara Viva Águas Claras I. Rod. Washington Luís, 426, Cedral - SP, 15895-000.',
+    links: [
+      { label: 'Ver localização da cerimônia no Google Maps (abre em nova aba)', rect: [314.60199, 222.95563, 527.6286, 267.96124], href: 'https://maps.app.goo.gl/WsmCB87bk2KB2YqDA', external: true },
+      { label: 'Ver localização da recepção no Google Maps (abre em nova aba)', rect: [177.17215, 30.873108, 390.19876, 75.878723], href: 'https://maps.app.goo.gl/ufVpJmGGVeGAmkb47', external: true },
+      { label: 'Avançar para as informações gerais', rect: [472.68369, -14.2561035, 591.94861, 74.254974], href: '#pagina-4' },
+    ],
+  },
+  {
+    title: 'Informações gerais',
+    description: 'Traje: sugerimos aos nossos convidados o uso de traje social. Pedimos, gentilmente, que evitem bermudas e camisetas. Horário: a cerimônia terá início pontualmente as 19H. Recomendamos a chegada com 30 minutos de antecedência. Site dos noivos: preparamos um espaço especial com nossa lista de presentes e outras informações sobre o casamento.',
+    links: [{ label: 'Acessar o site dos noivos (abre em nova aba)', rect: [295.19876, 30.102905, 527.72784, 75.858612], href: siteUrl, external: true }],
+  },
+  { title: 'Página final', description: 'Última página do PDF original, com fundo creme e sem texto.', links: [] },
+];
 
-const ceremonyMapUrl =
-  'https://www.google.com/maps/search/?api=1&query=Pra%C3%A7a%20S%C3%A3o%20Luiz%2C%20247%2C%20Centro%2C%20Cedral%20-%20SP';
+// Convert bottom-left PDF coordinates, including the page's nonzero origin.
+function hotspotStyle(rect: number[]): CSSProperties {
+  const [x0, y0, x1, y1] = rect;
+  const left = Math.max(0, x0), right = Math.min(567, x1);
+  const bottom = Math.max(8.039995, y0), top = Math.min(575.04, y1);
+  return { left: `${left / 567 * 100}%`, top: `${(575.04 - top) / 567 * 100}%`, width: `${(right - left) / 567 * 100}%`, height: `${(top - bottom) / 567 * 100}%` };
+}
 
-const receptionMapUrl =
-  'https://www.google.com/maps/search/?api=1&query=Ch%C3%A1cara%20%C3%81guas%20Claras%20Viva%201%2C%20S%C3%A3o%20Jos%C3%A9%20do%20Rio%20Preto%20-%20SP';
-
-const casarBaseUrl = 'https://noivos.casar.com/leonardo-s2-bruna';
-
-function formatTimeLeft() {
-  const now = new Date();
-  const diff = weddingDate.getTime() - now.getTime();
-
-  if (diff <= 0) {
-    return { days: '00', hours: '00', minutes: '00' };
-  }
-
-  const totalMinutes = Math.floor(diff / 60000);
-  const days = Math.floor(totalMinutes / 1440);
-  const hours = Math.floor((totalMinutes % 1440) / 60);
-  const minutes = totalMinutes % 60;
-
-  return {
-    days: String(days).padStart(2, '0'),
-    hours: String(hours).padStart(2, '0'),
-    minutes: String(minutes).padStart(2, '0'),
-  };
+function pageFromHash() {
+  const match = /^#pagina-([1-5])$/.exec(window.location.hash);
+  return match ? Number(match[1]) - 1 : 0;
 }
 
 export default function Home() {
-  const [isOpen, setIsOpen] = useState(false);
-  const timeLeft = useMemo(formatTimeLeft, []);
+  const [current, setCurrent] = useState(0);
+  const [previous, setPrevious] = useState<number | null>(null);
+  const [direction, setDirection] = useState('forward');
+  const currentRef = useRef(0);
+  const stageRef = useRef<HTMLDivElement>(null);
+  const touchRef = useRef<{ x: number; y: number } | null>(null);
+
+  useEffect(() => {
+    currentRef.current = pageFromHash();
+    setCurrent(currentRef.current);
+    const onHashChange = () => {
+      const next = pageFromHash();
+      if (next === currentRef.current) return;
+      setPrevious(currentRef.current);
+      setDirection(next > currentRef.current ? 'forward' : 'backward');
+      currentRef.current = next;
+      setCurrent(next);
+      stageRef.current?.focus({ preventScroll: true });
+    };
+    window.addEventListener('hashchange', onHashChange);
+    return () => window.removeEventListener('hashchange', onHashChange);
+  }, []);
+
+  function goTo(next: number) {
+    if (next >= 0 && next < pages.length) window.location.hash = `pagina-${next + 1}`;
+  }
 
   return (
-    <main className={`wedding-site${isOpen ? ' is-open' : ''}`}>
-      <section className="cover-experience" aria-label="Abertura do convite">
-        <div
-          className="invitation-stage"
-          aria-label="Convite de casamento de Bruna e Leonardo"
-        >
-          <button
-            type="button"
-            className="invitation-page cover-page"
-            onClick={() => setIsOpen(true)}
-            aria-label="Abrir o convite de casamento"
-            tabIndex={isOpen ? -1 : 0}
-          >
-            <img
-              src="/convite/capa.png"
-              alt="Capa do convite de casamento de Bruna e Leonardo"
-              draggable={false}
-            />
-          </button>
-
-          <div className="invitation-page opened-page" aria-hidden={!isOpen}>
-            <img
-              src="/convite/convite.png"
-              alt="Convite de casamento de Bruna e Leonardo para 7 de novembro de 2026, às 19 horas"
-              draggable={false}
-            />
-          </div>
+    <main className="invitation-viewer" onKeyDown={(event) => {
+      if (event.altKey || event.ctrlKey || event.metaKey) return;
+      if (event.key === 'ArrowRight') { event.preventDefault(); goTo(current + 1); }
+      if (event.key === 'ArrowLeft') { event.preventDefault(); goTo(current - 1); }
+    }}>
+      <h1 className="sr-only">Convite de casamento de Bruna e Leonardo</h1>
+      <div className="invitation-shell">
+        <div className={`invitation-stage ${direction}`} ref={stageRef} tabIndex={-1}
+          role="region" aria-label={`Página ${current + 1} de 5: ${pages[current].title}`}
+          onTouchStart={(event) => {
+            const target = event.target as HTMLElement;
+            touchRef.current = event.touches.length === 1 && !target.closest('a, button')
+              ? { x: event.touches[0].clientX, y: event.touches[0].clientY } : null;
+          }}
+          onTouchMove={(event) => { if (event.touches.length !== 1) touchRef.current = null; }}
+          onTouchCancel={() => { touchRef.current = null; }}
+          onTouchEnd={(event) => {
+            const start = touchRef.current;
+            touchRef.current = null;
+            if (!start || !event.changedTouches.length || (window.visualViewport?.scale ?? 1) > 1.05) return;
+            const dx = event.changedTouches[0].clientX - start.x;
+            const dy = event.changedTouches[0].clientY - start.y;
+            if (Math.abs(dx) > 65 && Math.abs(dx) > Math.abs(dy) * 1.5) goTo(current + (dx < 0 ? 1 : -1));
+          }}>
+          {pages.map((page, index) => (
+            <section key={index} className={`pdf-page ${index === current ? 'active' : index === previous ? 'leaving' : 'parked'}${previous !== null && index === current ? 'entering' : ''}`}
+              inert={index !== current} aria-hidden={index !== current}
+              onAnimationEnd={(event) => { if (event.target === event.currentTarget && index === current) setPrevious(null); }}>
+              <img src={`/convite-novo/pagina-${index + 1}.png`} width={2400} height={2400}
+                alt={page.description} draggable={false} decoding="async"
+                loading={index < 2 ? 'eager' : 'lazy'} fetchPriority={index === 0 ? 'high' : 'auto'} />
+              {page.links.map((link) => (
+                <a key={link.label} className="pdf-hotspot" href={link.href} style={hotspotStyle(link.rect)}
+                  aria-label={link.label} title={link.label}
+                  target={link.external ? '_blank' : undefined}
+                  rel={link.external ? 'noopener noreferrer' : undefined} />
+              ))}
+            </section>
+          ))}
         </div>
-
-        <a className="scroll-cue" href="#inicio" aria-label="Ir para o site">
-          <ChevronDown aria-hidden="true" />
-        </a>
-      </section>
-
-      <header className="site-header" id="inicio">
-        <a className="brand-mark" href="#inicio" aria-label="Início">
-          <span>B</span>
-          <Heart aria-hidden="true" />
-          <span>L</span>
-        </a>
-        <nav className="site-nav" aria-label="Menu principal">
-          <a href="#casal">O casal</a>
-          <a href="#cerimonia">Cerimônia</a>
-          <a href="#recepcao">Recepção</a>
-          <a href="#presentes">Presentes</a>
-          <a href="#presenca">Presença</a>
-          <a href="#recados">Recados</a>
-        </nav>
-      </header>
-
-      <section className="hero-section">
-        <div className="hero-copy">
-          <p className="eyebrow">07 | 11 | 2026</p>
-          <h1>Bruna & Leonardo</h1>
-          <p>
-            Estamos preparando esse dia com muito carinho para celebrar ao lado
-            das pessoas que fazem parte da nossa história.
-          </p>
-          <div className="hero-actions" aria-label="Ações principais">
-            <a className="primary-action" href="#presenca">
-              <CalendarHeart aria-hidden="true" />
-              Confirmar presença
-            </a>
-            <a className="secondary-action" href="#cerimonia">
-              <MapPin aria-hidden="true" />
-              Ver locais
-            </a>
-          </div>
-        </div>
-
-        <div className="countdown-card" aria-label="Contagem para o casamento">
-          <span>Faltam</span>
-          <div className="countdown-grid">
-            <strong>{timeLeft.days}</strong>
-            <strong>{timeLeft.hours}</strong>
-            <strong>{timeLeft.minutes}</strong>
-            <small>dias</small>
-            <small>horas</small>
-            <small>min</small>
-          </div>
-        </div>
-      </section>
-
-      <section className="content-section story-section" id="casal">
-        <div className="section-kicker">O casal</div>
-        <h2>Uma nova parte da nossa história começa aqui.</h2>
-        <p>
-          Histórias de amor existem e a nossa chegou nesse momento tão esperado:
-          vamos nos casar. Queremos viver cada detalhe perto da família e dos
-          amigos que tornam essa caminhada ainda mais especial.
-        </p>
-      </section>
-
-      <section className="details-grid" aria-label="Detalhes do casamento">
-        <article className="detail-panel" id="cerimonia">
-          <span className="panel-icon">
-            <CalendarHeart aria-hidden="true" />
-          </span>
-          <p className="section-kicker">Cerimônia</p>
-          <h2>07 de novembro de 2026, às 19h</h2>
-          <p>
-            Praça São Luiz, 247, Centro, Cedral - SP. A celebração será
-            conduzida com pontualidade para receber todos com tranquilidade.
-          </p>
-          <a className="link-button" href={ceremonyMapUrl} target="_blank">
-            <MapPin aria-hidden="true" />
-            Abrir no mapa
-          </a>
-        </article>
-
-        <article className="detail-panel" id="recepcao">
-          <span className="panel-icon">
-            <Heart aria-hidden="true" />
-          </span>
-          <p className="section-kicker">Recepção</p>
-          <h2>A partir das 20h30</h2>
-          <p>
-            Chácara Águas Claras - Viva 1, em São José do Rio Preto - SP.
-            Depois da cerimônia, a festa continua com todos vocês.
-          </p>
-          <a className="link-button" href={receptionMapUrl} target="_blank">
-            <MapPin aria-hidden="true" />
-            Abrir no mapa
-          </a>
-        </article>
-      </section>
-
-      <section className="action-band" id="presentes">
-        <div>
-          <p className="section-kicker">Lista de presentes</p>
-          <h2>Seu carinho faz parte desse momento.</h2>
-          <p>
-            Para quem desejar nos presentear, deixamos um caminho direto para a
-            lista preparada com amor.
-          </p>
-        </div>
-        <a className="primary-action" href={`${casarBaseUrl}#presentes`}>
-          <Gift aria-hidden="true" />
-          Ver lista
-        </a>
-      </section>
-
-      <section className="split-section" id="presenca">
-        <div>
-          <p className="section-kicker">Confirme sua presença</p>
-          <h2>Ajude a gente a preparar tudo com cuidado.</h2>
-          <p>
-            A confirmação oficial continua no nosso espaço do Casar.com, onde
-            os dados ficam organizados para o grande dia.
-          </p>
-        </div>
-        <a className="link-button large" href={`${casarBaseUrl}#rsvp`}>
-          <CalendarHeart aria-hidden="true" />
-          Confirmar agora
-        </a>
-      </section>
-
-      <section className="message-section" id="recados">
-        <div>
-          <p className="section-kicker">Recados</p>
-          <h2>Deixe uma mensagem de carinho.</h2>
-          <p>
-            Vamos amar ler cada recado. O envio também leva para o nosso espaço
-            oficial, para ficar tudo reunido.
-          </p>
-        </div>
-        <a className="secondary-action" href={`${casarBaseUrl}#recados`}>
-          <MessageCircleHeart aria-hidden="true" />
-          Escrever recado
-        </a>
-      </section>
-
-      <footer className="site-footer">
-        <span>Bruna</span>
-        <Heart aria-hidden="true" />
-        <span>Leonardo</span>
-        <a href="#inicio" aria-label="Voltar ao início">
-          <Send aria-hidden="true" />
-        </a>
-      </footer>
+        <Pagination className="page-navigation" aria-label="Páginas do convite">
+          <button className="page-arrow" type="button" disabled={current === 0} onClick={() => goTo(current - 1)} aria-label="Página anterior"><ChevronLeft aria-hidden="true" /></button>
+          <PaginationContent className="page-numbers">
+            {pages.map((page, index) => (
+              <PaginationItem key={page.title}>
+                <PaginationLink className="page-number" href={`#pagina-${index + 1}`} isActive={current === index}
+                  aria-label={`Página ${index + 1}: ${page.title}`}>{index + 1}</PaginationLink>
+              </PaginationItem>
+            ))}
+          </PaginationContent>
+          <button className="page-arrow" type="button" disabled={current === pages.length - 1} onClick={() => goTo(current + 1)} aria-label="Próxima página"><ChevronRight aria-hidden="true" /></button>
+        </Pagination>
+        <p className="page-caption" aria-live="polite" aria-atomic="true">{current + 1} / 5 · {pages[current].title}</p>
+      </div>
     </main>
   );
 }
