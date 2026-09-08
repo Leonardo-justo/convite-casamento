@@ -9,6 +9,9 @@ import { renderToString } from 'react-dom/server';
 const root = fileURLToPath(new URL('../', import.meta.url));
 const output = path.join(root, 'dist-pages');
 const temporary = await mkdtemp(path.join(root, '.pages-build-'));
+const siteUrl = 'https://leonardo-justo.github.io/convite-casamento/';
+const previewImageUrl = `${siteUrl}convite-atual/pagina-1.png`;
+const previewDescription = 'Com carinho, convidamos voce para celebrar o casamento de Bruna e Leonardo.';
 try {
   // Bundle shared UI components, then render the same page used locally.
   await build({ configFile: false, root, publicDir: false, plugins: [react()],
@@ -39,13 +42,24 @@ try {
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Bruna e Leonardo | Convite de casamento</title>
-<meta name="description" content="Convite de casamento de Bruna e Leonardo.">
-<meta name="robots" content="noindex, nofollow">
+<meta name="description" content="${previewDescription}">
+<link rel="canonical" href="${siteUrl}">
 <meta property="og:title" content="Bruna e Leonardo | Convite de casamento">
-<meta property="og:description" content="Convite de casamento de Bruna e Leonardo.">
+<meta property="og:description" content="${previewDescription}">
 <meta property="og:type" content="website">
-<meta property="og:image" content="./convite-atual/pagina-1.png">
+<meta property="og:url" content="${siteUrl}">
+<meta property="og:site_name" content="Convite de casamento de Bruna e Leonardo">
+<meta property="og:locale" content="pt_BR">
+<meta property="og:image" content="${previewImageUrl}">
+<meta property="og:image:secure_url" content="${previewImageUrl}">
+<meta property="og:image:type" content="image/png">
+<meta property="og:image:width" content="2400">
+<meta property="og:image:height" content="2400">
+<meta property="og:image:alt" content="Convite de casamento de Bruna e Leonardo">
 <meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Bruna e Leonardo | Convite de casamento">
+<meta name="twitter:description" content="${previewDescription}">
+<meta name="twitter:image" content="${previewImageUrl}">
 <link rel="stylesheet" href="./style.css">
 </head><body><div id="invitation-root">${markup}</div><script type="module" src="./pages-client.js"></script></body></html>`);
   console.log('GitHub Pages pronto: dist-pages/index.html');
