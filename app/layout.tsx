@@ -11,13 +11,13 @@ export const metadata: Metadata = {
     title: 'Bruna e Leonardo | Convite de casamento',
     description: 'Convite de casamento de Bruna e Leonardo.',
     type: 'website',
-    images: [{ url: '/og.png', width: 3494, height: 2481 }],
+    images: [{ url: '/convite-atual/pagina-1.png', width: 2400, height: 2400 }],
   },
   twitter: {
     card: 'summary_large_image',
     title: 'Bruna e Leonardo | Convite de casamento',
     description: 'Convite de casamento de Bruna e Leonardo.',
-    images: ['/og.png'],
+    images: ['/convite-atual/pagina-1.png'],
   },
 };
 

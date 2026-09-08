@@ -30,7 +30,11 @@ const pages: { title: string; description: string; links: Hotspot[] }[] = [
     description: 'Traje: sugerimos aos nossos convidados o uso de traje social. Pedimos, gentilmente, que evitem bermudas e camisetas. Horário: a cerimônia terá início pontualmente as 19H. Recomendamos a chegada com 30 minutos de antecedência. Site dos noivos: preparamos um espaço especial com nossa lista de presentes e outras informações sobre o casamento.',
     links: [{ label: 'Acessar o site dos noivos (abre em nova aba)', rect: [295.19876, 30.102905, 527.72784, 75.858612], href: siteUrl, external: true }],
   },
-  { title: 'Página final', description: 'Última página do PDF original, com fundo creme e sem texto.', links: [] },
+  {
+    title: 'Confirme sua Presença',
+    description: 'Sua presença tornará nosso dia ainda mais especial! Para que possamos preparar cada detalhe com carinho, pedimos a gentileza de confirmar sua presença até o dia 7 de outubro de 2026, através do nosso site. A confirmação é obrigatória para a sua entrada no evento. Esperamos vocês lá!',
+    links: [{ label: 'Confirmar presença no site dos noivos (abre em nova aba)', rect: [163.281525, 187.77249, 404.06161, 231.27795], href: 'https://noivos.casar.com/leonardo-s2-bruna#/rsvp', external: true }],
+  },
 ];
 
 // Convert bottom-left PDF coordinates, including the page's nonzero origin.
@@ -49,7 +53,7 @@ export default function Home() {
         {pages.map((page, index) => (
           <section key={page.title} id={`pagina-${index + 1}`} className="pdf-page"
             aria-label={page.title}>
-            <img src={`./convite-novo/pagina-${index + 1}.png`} width={2400} height={2400}
+            <img src={`./convite-atual/pagina-${index + 1}.png`} width={2400} height={2400}
               alt={page.description} draggable={false} decoding="async"
               loading={index === 0 ? 'eager' : 'lazy'} fetchPriority={index === 0 ? 'high' : 'auto'} />
             {page.links.map((link) => (
