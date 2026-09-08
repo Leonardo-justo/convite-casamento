@@ -1,0 +1,60 @@
+server:
+  # API central: fonte de verdade do catálogo.
+  port: ${SERVER_PORT:8081}
+
+spring:
+  application:
+    name: servico-central-catalogo
+  datasource:
+    url: ${CENTRAL_DB_URL:jdbc:postgresql://localhost:5432/restaurant}
+    username: ${CENTRAL_DB_USER:restaurant}
+    password: ${CENTRAL_DB_PASSWORD:restaurant}
+  jpa:
+    open-in-view: false
+    hibernate:
+      ddl-auto: validate
+    properties:
+      hibernate:
+        jdbc:
+          time_zone: UTC
+  flyway:
+    enabled: true
+  kafka:
+    # Em desenvolvimento aponta para o broker local; produção usa vários brokers.
+    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:localhost:9092}
+    admin:
+      fail-fast: true
+    producer:
+      # O contrato deste laboratório é texto/JSON.
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.apache.kafka.common.serialization.StringSerializer
+      acks: all
+      retries: 2147483647
+      properties:
+        # Evita duplicação em retries internos do produtor.
+        enable.idempotence: true
+        max.in.flight.requests.per.connection: 5
+        compression.type: zstd
+        delivery.timeout.ms: 120000
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics
+  endpoint:
+    health:
+      show-details: always
+
+app:
+  kafka:
+    topics:
+      product-changed: ${PRODUCT_TOPIC:restaurant.catalog.product.v1}
+    topic:
+      partitions: ${PRODUCT_TOPIC_PARTITIONS:6}
+      replication-factor: ${KAFKA_REPLICATION_FACTOR:1}
+  outbox:
+    # Worker que transforma linhas pendentes em mensagens Kafka.
+    initial-delay: ${OUTBOX_INITIAL_DELAY:2s}
+    fixed-delay: ${OUTBOX_FIXED_DELAY:500ms}
+    send-timeout: ${OUTBOX_SEND_TIMEOUT:10s}
