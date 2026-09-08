@@ -1,4 +1,6 @@
-import type { CSSProperties } from 'react';
+'use client';
+
+import { useEffect, useRef, useState, type CSSProperties, type MouseEvent } from 'react';
 import { Pagination, PaginationContent, PaginationItem } from '@/components/ui/pagination';
 
 const siteUrl = 'https://noivos.casar.com/leonardo-s2-bruna';
@@ -47,12 +49,61 @@ function hotspotStyle(rect: number[]): CSSProperties {
 }
 
 export default function Home() {
+  // Keep the first client render identical to the server, including deep links.
+  const [current, setCurrent] = useState(0);
+  const viewerRef = useRef<HTMLElement>(null);
+
+  useEffect(() => {
+    const sections = [...(viewerRef.current?.querySelectorAll<HTMLElement>('.invitation-section') ?? [])];
+    let frame = 0;
+    const sync = () => {
+      frame = 0;
+      let nearest = 0, distance = Infinity;
+      sections.forEach((section, index) => {
+        const rect = section.getBoundingClientRect();
+        const delta = Math.abs(rect.top + rect.height / 2 - window.innerHeight / 2);
+        if (delta < distance) { nearest = index; distance = delta; }
+      });
+      setCurrent(nearest);
+    };
+    const schedule = () => { if (!frame) frame = requestAnimationFrame(sync); };
+    sync();
+    window.addEventListener('scroll', schedule, { passive: true });
+    window.addEventListener('resize', schedule, { passive: true });
+    window.addEventListener('hashchange', schedule);
+    return () => {
+      cancelAnimationFrame(frame);
+      window.removeEventListener('scroll', schedule);
+      window.removeEventListener('resize', schedule);
+      window.removeEventListener('hashchange', schedule);
+    };
+  }, []);
+
+  function navigate(index: number) {
+    if (index < 0 || index >= pages.length) return;
+    const target = document.getElementById(`pagina-${index + 1}`);
+    if (!target) return;
+    if (location.hash !== `#${target.id}`) history.pushState(null, '', `#${target.id}`);
+    target.scrollIntoView({ behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'instant' : 'smooth', block: 'start' });
+  }
+
+  function handleClick(event: MouseEvent<HTMLElement>) {
+    if (event.ctrlKey || event.metaKey || event.shiftKey || event.altKey || !(event.target instanceof Element)) return;
+    const link = event.target.closest('a[href^="#pagina-"]');
+    const match = /^#pagina-([1-5])$/.exec(link?.getAttribute('href') ?? '');
+    if (match) { event.preventDefault(); navigate(Number(match[1]) - 1); }
+  }
+
   return (
-    <main className="invitation-viewer">
+    <main className="invitation-viewer" ref={viewerRef} onClick={handleClick} onKeyDown={(event) => {
+      if (event.altKey || event.ctrlKey || event.metaKey || event.shiftKey) return;
+      const offset = ['ArrowRight', 'PageDown'].includes(event.key) ? 1 : ['ArrowLeft', 'PageUp'].includes(event.key) ? -1 : 0;
+      if (offset) { event.preventDefault(); navigate(current + offset); }
+    }}>
       <h1 className="sr-only">Convite de casamento de Bruna e Leonardo</h1>
       <div className="invitation-shell">
         {pages.map((page, index) => (
-          <section key={page.title} id={`pagina-${index + 1}`} className="invitation-section"
+          <section key={page.title} id={`pagina-${index + 1}`} className={`invitation-section${index === current ? ' is-current' : ''}`}
             aria-label={page.title}>
             <div className="pdf-page">
             <img src={`./convite-atual/pagina-${index + 1}.png`} width={2400} height={2400}
@@ -71,21 +122,20 @@ export default function Home() {
       </div>
       <Pagination className="side-navigation" aria-label="Páginas do convite">
         <p className="navigation-heading">Nosso convite</p>
-        <a className="step-link" data-previous href="#pagina-1" aria-label="Página anterior"><span aria-hidden="true">↑</span><span className="step-label">Anterior</span></a>
+        <a className="step-link" data-previous href={current > 0 ? `#pagina-${current}` : undefined} aria-disabled={current === 0} tabIndex={current === 0 ? -1 : 0} aria-label="Página anterior"><span aria-hidden="true">↑</span><span className="step-label">Anterior</span></a>
         <PaginationContent className="side-pages">
           {pages.map((page, index) => (
             <PaginationItem key={page.title}>
               <a className="side-page-link" data-page-link href={`#pagina-${index + 1}`}
-                aria-label={`Página ${index + 1}: ${page.title}`} aria-current={index === 0 ? 'page' : undefined}>
+                aria-label={`Página ${index + 1}: ${page.title}`} aria-current={index === current ? 'page' : undefined}>
                 <span className="page-marker">{index + 1}</span><span className="page-label">{page.title}</span>
               </a>
             </PaginationItem>
           ))}
         </PaginationContent>
-        <a className="step-link" data-next href="#pagina-2" aria-label="Próxima página"><span aria-hidden="true">↓</span><span className="step-label">Próxima</span></a>
-        <p className="navigation-status" aria-live="polite" aria-atomic="true">1 de 5</p>
+        <a className="step-link" data-next href={current < pages.length - 1 ? `#pagina-${current + 2}` : undefined} aria-disabled={current === pages.length - 1} tabIndex={current === pages.length - 1 ? -1 : 0} aria-label="Próxima página"><span aria-hidden="true">↓</span><span className="step-label">Próxima</span></a>
+        <p className="navigation-status" aria-live="polite" aria-atomic="true">{current + 1} de {pages.length}</p>
       </Pagination>
-      <script type="module" src="./invitation-navigation.js" />
     </main>
   );
 }
