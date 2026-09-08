@@ -2,12 +2,12 @@
 
 :root { color-scheme: light; --paper: #f6f0e4; --ink: #655239; --gold: #99722c; --rail: 216px; font-family: Georgia, 'Times New Roman', serif; background: var(--paper); color: var(--ink); }
 * { box-sizing: border-box; }
-html { scroll-behavior: smooth; scroll-snap-type: y proximity; }
+html { scroll-behavior: smooth; }
 html, body { margin: 0; min-height: 100%; }
 .invitation-viewer { width: 100%; min-height: 100svh; }
 .invitation-shell { padding-right: var(--rail); }
-.invitation-section { min-height: 100svh; padding: 20px 24px 12px; display: flex; flex-direction: column; align-items: center; justify-content: center; scroll-snap-align: start; }
-.pdf-page { position: relative; width: min(100%, calc(100svh - 76px), 1100px); aspect-ratio: 1; flex-shrink: 0; background: var(--paper); box-shadow: 0 14px 48px #65523916, 0 1px 4px #6552390c; transform-origin: center; }
+.invitation-section { padding: 0 0 24px; display: flex; flex-direction: column; align-items: center; }
+.pdf-page { position: relative; width: 100%; aspect-ratio: 1; flex-shrink: 0; background: var(--paper); transform-origin: center; }
 .pdf-page img { display: block; width: 100%; height: auto; user-select: none; }
 .invitation-section.is-current .pdf-page { animation: page-arrive 750ms cubic-bezier(.16,.7,.25,1) both; }
 .section-caption { display: flex; align-items: center; justify-content: center; gap: 9px; margin: 14px 0 0; font-size: 14px; line-height: 20px; color: #766b5b; }
@@ -29,10 +29,8 @@ html, body { margin: 0; min-height: 100%; }
 a:focus-visible { outline: 3px solid var(--gold); outline-offset: 3px; }
 .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; border: 0; }
 @media (hover: hover) { .pdf-hotspot:hover { outline: 1px solid #99722c55; } .side-page-link:hover, .step-link:hover { background: #efe4cf; } }
-@media (max-width: 760px) {
+@media (max-width: 1100px) {
   :root { --rail: 64px; }
-  .invitation-section { padding: 10px 0; }
-  .pdf-page { width: min(100%, calc(100svh - 60px)); box-shadow: none; }
   .side-navigation { width: 50px; right: max(7px, env(safe-area-inset-right)); padding: 6px 2px; gap: 5px; border-radius: 25px; }
   .navigation-heading, .page-label, .step-label { display: none; }
   .side-pages { gap: 3px; }
@@ -42,16 +40,41 @@ a:focus-visible { outline: 3px solid var(--gold); outline-offset: 3px; }
   .navigation-status { font-size: 12px; padding: 2px 0 5px; }
   .section-caption { flex-wrap: wrap; font-size: 12px; margin-top: 10px; gap: 6px; }
 }
-@media (max-height: 500px) and (min-width: 761px) {
+@media (max-height: 500px) and (min-width: 1101px) {
   .navigation-heading, .navigation-status { display: none; }
   .side-navigation { gap: 2px; padding: 6px 10px; }
   .side-pages { gap: 0; }
   .side-page-link { min-height: 38px; padding: 3px; }
 }
-@media (max-height: 390px) and (max-width: 760px) {
+@media (max-height: 390px) and (min-width: 601px) and (max-width: 1100px) {
   .side-navigation { gap: 0; }
   .navigation-status { display: none; }
   .side-pages { gap: 0; }
+}
+@media (max-width: 600px) {
+  :root { --rail: 0px; }
+  .invitation-shell { padding-bottom: calc(84px + env(safe-area-inset-bottom)); }
+  .invitation-section { padding-bottom: 20px; }
+  .side-navigation {
+    top: auto;
+    right: auto;
+    left: 50%;
+    bottom: max(8px, env(safe-area-inset-bottom));
+    transform: translateX(-50%);
+    flex-direction: row;
+    align-items: center;
+    justify-content: center;
+    width: max-content;
+    max-width: calc(100% - 4px);
+    gap: 0;
+    padding: 4px 2px;
+    border-radius: 30px;
+  }
+  .side-pages { flex-direction: row; gap: 0; }
+  .side-page-link, .step-link { flex-shrink: 0; }
+  .step-link > span:first-child { transform: rotate(-90deg); }
+  .navigation-status { display: none; }
+  html { scroll-padding-bottom: calc(76px + env(safe-area-inset-bottom)); }
 }
 @media (pointer: coarse) { .pdf-hotspot::after { content: ''; position: absolute; inset: 50% 0 auto; height: max(100%, 44px); transform: translateY(-50%); } }
 @keyframes page-arrive { from { opacity: .5; transform: translateY(20px) scale(.985); } to { opacity: 1; transform: translateY(0) scale(1); } }
