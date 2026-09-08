@@ -1,4 +1,5 @@
 import type { CSSProperties } from 'react';
+import { Pagination, PaginationContent, PaginationItem } from '@/components/ui/pagination';
 
 const siteUrl = 'https://noivos.casar.com/leonardo-s2-bruna';
 type Hotspot = { label: string; rect: number[]; href: string; external?: boolean };
@@ -51,8 +52,9 @@ export default function Home() {
       <h1 className="sr-only">Convite de casamento de Bruna e Leonardo</h1>
       <div className="invitation-shell">
         {pages.map((page, index) => (
-          <section key={page.title} id={`pagina-${index + 1}`} className="pdf-page"
+          <section key={page.title} id={`pagina-${index + 1}`} className="invitation-section"
             aria-label={page.title}>
+            <div className="pdf-page">
             <img src={`./convite-atual/pagina-${index + 1}.png`} width={2400} height={2400}
               alt={page.description} draggable={false} decoding="async"
               loading={index === 0 ? 'eager' : 'lazy'} fetchPriority={index === 0 ? 'high' : 'auto'} />
@@ -62,9 +64,28 @@ export default function Home() {
                 target={link.external ? '_blank' : undefined}
                 rel={link.external ? 'noopener noreferrer' : undefined} />
             ))}
+            </div>
+            <p className="section-caption"><span>{String(index + 1).padStart(2, '0')}</span> / 05 <span className="caption-divider" />{page.title}</p>
           </section>
         ))}
       </div>
+      <Pagination className="side-navigation" aria-label="Páginas do convite">
+        <p className="navigation-heading">Nosso convite</p>
+        <a className="step-link" data-previous href="#pagina-1" aria-label="Página anterior"><span aria-hidden="true">↑</span><span className="step-label">Anterior</span></a>
+        <PaginationContent className="side-pages">
+          {pages.map((page, index) => (
+            <PaginationItem key={page.title}>
+              <a className="side-page-link" data-page-link href={`#pagina-${index + 1}`}
+                aria-label={`Página ${index + 1}: ${page.title}`} aria-current={index === 0 ? 'page' : undefined}>
+                <span className="page-marker">{index + 1}</span><span className="page-label">{page.title}</span>
+              </a>
+            </PaginationItem>
+          ))}
+        </PaginationContent>
+        <a className="step-link" data-next href="#pagina-2" aria-label="Próxima página"><span aria-hidden="true">↓</span><span className="step-label">Próxima</span></a>
+        <p className="navigation-status" aria-live="polite" aria-atomic="true">1 de 5</p>
+      </Pagination>
+      <script type="module" src="./invitation-navigation.js" />
     </main>
   );
 }
