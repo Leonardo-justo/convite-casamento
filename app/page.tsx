@@ -51,40 +51,30 @@ function hotspotStyle(rect: number[]): CSSProperties {
 export default function Home() {
   // Keep the first client render identical to the server, including deep links.
   const [current, setCurrent] = useState(0);
+  const [direction, setDirection] = useState('forward');
   const viewerRef = useRef<HTMLElement>(null);
 
   useEffect(() => {
-    const sections = [...(viewerRef.current?.querySelectorAll<HTMLElement>('.invitation-section') ?? [])];
-    let frame = 0;
     const sync = () => {
-      frame = 0;
-      let nearest = 0, distance = Infinity;
-      sections.forEach((section, index) => {
-        const rect = section.getBoundingClientRect();
-        const delta = Math.abs(rect.top + rect.height / 2 - window.innerHeight / 2);
-        if (delta < distance) { nearest = index; distance = delta; }
-      });
-      setCurrent(nearest);
+      const match = /^#pagina-([1-5])$/.exec(window.location.hash);
+      setCurrent(match ? Number(match[1]) - 1 : 0);
     };
-    const schedule = () => { if (!frame) frame = requestAnimationFrame(sync); };
     sync();
-    window.addEventListener('scroll', schedule, { passive: true });
-    window.addEventListener('resize', schedule, { passive: true });
-    window.addEventListener('hashchange', schedule);
+    window.addEventListener('hashchange', sync);
+    window.addEventListener('popstate', sync);
     return () => {
-      cancelAnimationFrame(frame);
-      window.removeEventListener('scroll', schedule);
-      window.removeEventListener('resize', schedule);
-      window.removeEventListener('hashchange', schedule);
+      window.removeEventListener('hashchange', sync);
+      window.removeEventListener('popstate', sync);
     };
   }, []);
 
   function navigate(index: number) {
-    if (index < 0 || index >= pages.length) return;
-    const target = document.getElementById(`pagina-${index + 1}`);
-    if (!target) return;
-    if (location.hash !== `#${target.id}`) history.pushState(null, '', `#${target.id}`);
-    target.scrollIntoView({ behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'instant' : 'smooth', block: 'start' });
+    if (index < 0 || index >= pages.length || index === current) return;
+    const hash = `#pagina-${index + 1}`;
+    if (location.hash !== hash) history.pushState(null, '', hash);
+    setDirection(index > current ? 'forward' : 'backward');
+    setCurrent(index);
+    viewerRef.current?.focus({ preventScroll: true });
   }
 
   function handleClick(event: MouseEvent<HTMLElement>) {
@@ -95,7 +85,7 @@ export default function Home() {
   }
 
   return (
-    <main className="invitation-viewer" ref={viewerRef} onClick={handleClick} onKeyDown={(event) => {
+    <main className={`invitation-viewer ${direction}`} ref={viewerRef} tabIndex={-1} onClick={handleClick} onKeyDown={(event) => {
       if (event.altKey || event.ctrlKey || event.metaKey || event.shiftKey) return;
       const offset = ['ArrowRight', 'PageDown'].includes(event.key) ? 1 : ['ArrowLeft', 'PageUp'].includes(event.key) ? -1 : 0;
       if (offset) { event.preventDefault(); navigate(current + offset); }
@@ -104,11 +94,11 @@ export default function Home() {
       <div className="invitation-shell">
         {pages.map((page, index) => (
           <section key={page.title} id={`pagina-${index + 1}`} className={`invitation-section${index === current ? ' is-current' : ''}`}
-            aria-label={page.title}>
+            hidden={index !== current} inert={index !== current} aria-label={page.title}>
             <div className="pdf-page">
             <img src={`./convite-atual/pagina-${index + 1}.png`} width={2400} height={2400}
               alt={page.description} draggable={false} decoding="async"
-              loading={index === 0 ? 'eager' : 'lazy'} fetchPriority={index === 0 ? 'high' : 'auto'} />
+              loading={index <= current + 1 ? 'eager' : 'lazy'} fetchPriority={index === current ? 'high' : 'auto'} />
             {page.links.map((link) => (
               <a key={link.label} className="pdf-hotspot" href={link.href} style={hotspotStyle(link.rect)}
                 aria-label={link.label} title={link.label}

@@ -2,18 +2,20 @@
 
 :root { color-scheme: light; --paper: #f6f0e4; --ink: #655239; --gold: #99722c; --rail: 216px; font-family: Georgia, 'Times New Roman', serif; background: var(--paper); color: var(--ink); }
 * { box-sizing: border-box; }
-html { scroll-behavior: smooth; }
+html { overflow-x: clip; }
 html, body { margin: 0; min-height: 100%; }
-.invitation-viewer { width: 100%; min-height: 100svh; }
-.invitation-shell { padding-right: var(--rail); }
-.invitation-section { padding: 0 0 24px; display: flex; flex-direction: column; align-items: center; }
-.pdf-page { position: relative; width: 100%; aspect-ratio: 1; flex-shrink: 0; background: var(--paper); transform-origin: center; }
+.invitation-viewer { width: 100%; height: 100dvh; outline: none; }
+.invitation-shell { height: 100%; margin-right: var(--rail); padding: 16px 20px; display: grid; place-items: center; }
+.invitation-section { width: 100%; min-height: 0; display: flex; flex-direction: column; align-items: center; }
+.invitation-section[hidden] { display: none; }
+.pdf-page { position: relative; width: min(100%, calc(100dvh - 76px)); aspect-ratio: 1; flex-shrink: 0; background: var(--paper); transform-origin: center; box-shadow: 0 12px 48px #65523914; }
 .pdf-page img { display: block; width: 100%; height: auto; user-select: none; }
 .invitation-section.is-current .pdf-page { animation: page-arrive 750ms cubic-bezier(.16,.7,.25,1) both; }
+.backward .invitation-section.is-current .pdf-page { animation-name: page-return; }
 .section-caption { display: flex; align-items: center; justify-content: center; gap: 9px; margin: 14px 0 0; font-size: 14px; line-height: 20px; color: #766b5b; }
 .section-caption > span:first-child { color: var(--gold); }
 .caption-divider { width: 18px; height: 1px; background: #cdbd9c; }
-.side-navigation { position: fixed; z-index: 10; right: 24px; top: 50%; transform: translateY(-50%); width: 184px; display: flex; flex-direction: column; align-items: stretch; gap: 10px; margin: 0; padding: 18px 12px 12px; border: 1px solid #dbccb2; border-radius: 24px; background: #fffbf3ee; box-shadow: 0 8px 32px #65523910; backdrop-filter: blur(16px); }
+.side-navigation { position: fixed; z-index: 10; right: 24px; top: 50%; transform: translateY(-50%); width: 184px; max-height: calc(100dvh - 16px); overflow-y: auto; display: flex; flex-direction: column; align-items: stretch; gap: 10px; margin: 0; padding: 18px 12px 12px; border: 1px solid #dbccb2; border-radius: 24px; background: #fffbf3ee; box-shadow: 0 8px 32px #65523910; backdrop-filter: blur(16px); }
 .navigation-heading { margin: 0 0 4px; text-align: center; font-size: 16px; font-style: italic; }
 .side-pages { display: flex; flex-direction: column; align-items: stretch; gap: 5px; list-style: none; padding: 0; margin: 0; }
 .side-page-link { display: flex; align-items: center; gap: 10px; padding: 6px; min-height: 48px; border-radius: 14px; text-decoration: none; color: var(--ink); transition: background 220ms, color 220ms; }
@@ -31,6 +33,7 @@ a:focus-visible { outline: 3px solid var(--gold); outline-offset: 3px; }
 @media (hover: hover) { .pdf-hotspot:hover { outline: 1px solid #99722c55; } .side-page-link:hover, .step-link:hover { background: #efe4cf; } }
 @media (max-width: 1100px) {
   :root { --rail: 64px; }
+  .invitation-shell { padding: 12px 8px; }
   .side-navigation { width: 50px; right: max(7px, env(safe-area-inset-right)); padding: 6px 2px; gap: 5px; border-radius: 25px; }
   .navigation-heading, .page-label, .step-label { display: none; }
   .side-pages { gap: 3px; }
@@ -53,8 +56,8 @@ a:focus-visible { outline: 3px solid var(--gold); outline-offset: 3px; }
 }
 @media (max-width: 600px) {
   :root { --rail: 0px; }
-  .invitation-shell { padding-bottom: calc(84px + env(safe-area-inset-bottom)); }
-  .invitation-section { padding-bottom: 20px; }
+  .invitation-shell { padding: max(8px, env(safe-area-inset-top)) 0 calc(76px + env(safe-area-inset-bottom)); }
+  .pdf-page { width: min(100%, calc(100dvh - 128px - env(safe-area-inset-top) - env(safe-area-inset-bottom))); box-shadow: none; }
   .side-navigation {
     top: auto;
     right: auto;
@@ -74,8 +77,8 @@ a:focus-visible { outline: 3px solid var(--gold); outline-offset: 3px; }
   .side-page-link, .step-link { flex-shrink: 0; }
   .step-link > span:first-child { transform: rotate(-90deg); }
   .navigation-status { display: none; }
-  html { scroll-padding-bottom: calc(76px + env(safe-area-inset-bottom)); }
 }
 @media (pointer: coarse) { .pdf-hotspot::after { content: ''; position: absolute; inset: 50% 0 auto; height: max(100%, 44px); transform: translateY(-50%); } }
-@keyframes page-arrive { from { opacity: .5; transform: translateY(20px) scale(.985); } to { opacity: 1; transform: translateY(0) scale(1); } }
+@keyframes page-arrive { from { opacity: .25; transform: translateX(12px) scale(.985); } to { opacity: 1; transform: translateX(0) scale(1); } }
+@keyframes page-return { from { opacity: .25; transform: translateX(-12px) scale(.985); } to { opacity: 1; transform: translateX(0) scale(1); } }
 @media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } .invitation-section.is-current .pdf-page { animation: none; } .side-page-link, .page-marker, .step-link { transition: none; } }
